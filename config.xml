@@ -13,5 +13,6 @@
 
     <author href="https://www.opennms.org" email="ranger@opennms.org">Benjamin Reed</author>
 
+    <access origin="*" />
 </widget>
 
