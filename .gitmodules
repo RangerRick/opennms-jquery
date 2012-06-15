@@ -1,0 +1,9 @@
+[submodule "jquerymobile-router"]
+	path = jquerymobile-router
+	url = git://github.com/azicchetti/jquerymobile-router.git
+[submodule "runtime"]
+	path = runtime
+	url = git+ssh://git@git.phonegap.com/RangerRick/139395_OpenNMS.git
+[submodule "UglifyJS"]
+	path = UglifyJS
+	url = git://github.com/mishoo/UglifyJS.git
