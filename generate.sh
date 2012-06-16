@@ -17,7 +17,7 @@ if [ ! -x node_modules/clean-css/bin/cleancss ]; then
 	$NPM install clean-css || exit 1
 fi
 
-HTMLFILES=`ls *.html`
+STATICFILES=`ls *.html *.xml`
 JSFILES=`ls *.js jquerymobile-router/js/jquery.mobile.router.js`
 CSSFILES=`ls *.css themes/*.css`
 
@@ -63,8 +63,8 @@ grep -E 'images/.*\.png' app.css | sed -e 's,^.*url[(],,' -e 's,.png[)].*$,.png,
 	fi
 done
 
-echo "- copying HTML"
-for FILE in $HTMLFILES; do
+echo "- copying static files"
+for FILE in $STATICFILES; do
 	OUTPUTFILE="runtime/${FILE}"
 	OUTPUTDIR=`dirname "$OUTPUTFILE"`
 	mkdir -p "$OUTPUTDIR"
