@@ -1,13 +1,23 @@
 #!/bin/bash
 
-git submodule init
-git submodule update
+# don't do this, just let it blow up
+#git submodule init
+#git submodule update
 
-mkdir -p ~/.node_libraries
-ln -s UglifyJS/uglify-js.js ~/.node_libraries/uglify-js.js
-ln -s optimist/index.js ~/.node_libraries/optimist.js
-ln -s clean-css/lib/clean.js ~/.node_libraries/clean.js
+NPM=`which npm 2>/dev/null`
+if [ -z "$NPM" ] || [ ! -x "$NPM" ]; then
+	echo "Unable to locate npm.  Install node.js."
+	exit 1
+fi
 
+if [ ! -x node_modules/uglify-js/bin/uglifyjs ]; then
+	$NPM install uglify-js || exit 1
+fi
+if [ ! -x node_modules/clean-css/bin/cleancss ]; then
+	$NPM install clean-css || exit 1
+fi
+
+HTMLFILES=`ls *.html`
 JSFILES=`ls *.js jquerymobile-router/js/jquery.mobile.router.js`
 CSSFILES=`ls *.css themes/*.css`
 
@@ -20,7 +30,7 @@ for FILE in $JSFILES; do
 	if [ "$OUTPUTFILE" -nt "$FILE" ]; then
 		echo "skipped."
 	else
-		UglifyJS/bin/uglifyjs -o "$OUTPUTFILE" "$FILE" || exit 1
+		node_modules/uglify-js/bin/uglifyjs -o "$OUTPUTFILE" "$FILE" || exit 1
 		echo "done."
 	fi
 done
@@ -34,7 +44,35 @@ for FILE in $CSSFILES; do
 	if [ "$OUTPUTFILE" -nt "$FILE" ]; then
 		echo "skipped."
 	else
-		clean-css/bin/cleancss -o "$OUTPUTFILE" "$FILE" || exit 1
+		node_modules/clean-css/bin/cleancss -o "$OUTPUTFILE" "$FILE" || exit 1
+		echo "done."
+	fi
+done
+
+echo "- copying images"
+grep -E 'images/.*\.png' app.css | sed -e 's,^.*url[(],,' -e 's,.png[)].*$,.png,' | while read FILE; do
+	OUTPUTFILE="runtime/${FILE}"
+	OUTPUTDIR=`dirname "$OUTPUTFILE"`
+	mkdir -p "$OUTPUTDIR"
+	echo -e "  * $FILE: \c"
+	if [ "$OUTPUTFILE" -nt "$FILE" ]; then
+		echo "skipped."
+	else
+		cp "$FILE" "$OUTPUTFILE" || exit 1
+		echo "done."
+	fi
+done
+
+echo "- copying HTML"
+for FILE in $HTMLFILES; do
+	OUTPUTFILE="runtime/${FILE}"
+	OUTPUTDIR=`dirname "$OUTPUTFILE"`
+	mkdir -p "$OUTPUTDIR"
+	echo -e "  * $FILE: \c"
+	if [ "$OUTPUTFILE" -nt "$FILE" ]; then
+		echo "skipped."
+	else
+		cp "$FILE" "$OUTPUTFILE" || exit 1
 		echo "done."
 	fi
 done

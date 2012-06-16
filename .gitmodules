@@ -4,12 +4,3 @@
 [submodule "runtime"]
 	path = runtime
 	url = git+ssh://git@git.phonegap.com/RangerRick/139395_OpenNMS.git
-[submodule "UglifyJS"]
-	path = UglifyJS
-	url = git://github.com/mishoo/UglifyJS.git
-[submodule "clean-css"]
-	path = clean-css
-	url = git://github.com/GoalSmashers/clean-css.git
-[submodule "optimist"]
-	path = optimist
-	url = git://github.com/substack/node-optimist.git
