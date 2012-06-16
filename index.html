@@ -11,6 +11,7 @@
 		<script>
 			$( document ).bind( "mobileinit", function() {
 				$.mobile.allowCrossDomainPages = true;
+				$.mobile.defaultPageTransition = 'none';
 				$.support.cors = true;
 			});
 		</script>
@@ -25,7 +26,7 @@
 		<script src="app.js"></script>
 	</head>
 	<body>
-		<div id="outages" data-role="page" data-theme="a">
+		<div id="outages" data-role="page" data-theme="a" data-dom-cache="true">
 			<div data-role="header" data-position="fixed">
 				<h1>Outages</h1>
 			</div>
@@ -44,7 +45,7 @@
 				</div>
 			</div>
 		</div>
-		<div id="alarms" data-role="page" data-theme="a">
+		<div id="alarms" data-role="page" data-theme="a" data-dom-cache="true">
 			<div data-role="header" data-position="fixed">
 				<h1>Alarms</h1>
 			</div>

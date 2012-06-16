@@ -8,8 +8,6 @@ var tabState = {
 	alarms:  { pageId: "alarms",  url: "#alarms" }
 };
 
-$.mobile.defaultPageTransition = 'none';
-
 var defaultHandler = function( eventType, matchObj, ui, toPage, evt ) {
 	var toId = undefined;
 	if (toPage) {
