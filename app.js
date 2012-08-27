@@ -8,136 +8,138 @@ var tabState = {
 	alarms:  { pageId: "alarms",  url: "#alarms" }
 };
 
-var defaultHandler = function( eventType, matchObj, ui, toPage, evt ) {
-	var toId = undefined;
-	if (toPage) {
-		toId = $(toPage).attr('id');
+var initializeNodeDetails = function( state, evt, data, toUrl ) {
+	console.log("initializeNodeDetails");
+	var page   = data.toPage;
+	var source = '#' + state.pageId;
+	var params = {};
+	var nodeId = undefined;
+	if (toUrl) {
+		var match = toUrl.search.match("^.*?nodeId=([0-9]+).*?$");
+		console.log("match = " + match);
+		nodeId = match[1];
 	}
-	if (toId === undefined) {
-		// infer it from the matchObj
-		toId = matchObj[1];
+
+	var $footer = $(page).find(":jqmData(role=footer)");
+	$footer.find('a').each(function(index) {
+		var $href = $(this).attr('href');
+		if ($href == source) {
+			$(this).addClass('ui-btn-active');
+			$(this).addClass('ui-state-persist');
+		} else {
+			$(this).removeClass('ui-btn-active');
+		}
+	});
+
+	var $nodeTitle = $(page).find(":jqmData(role=header)").find('h1');
+	var $nodeContent = $(page).find(":jqmData(role=content)");
+	$nodeTitle.html("Node #" + nodeId);
+	var template = nodes.getTemplate(nodeId);
+	$nodeContent.html(template);
+	nodes.updateNode(nodeId, page, true);
+};
+
+$(document).bind('pagebeforechange', function(e, data) {
+	var fromPage = data.options.fromPage;
+	var toPage   = data.toPage;
+	var fromId   = undefined;
+	var toId     = undefined;
+	var toUrl    = undefined;
+
+	if (fromPage) fromId = fromPage.attr('id');
+	if (typeof toPage === 'string') {
+		toUrl = $.mobile.path.parseUrl(toPage);
+		var hash = toUrl.hash;
+		if (hash) {
+			toId = hash.replace(/^.*?\\#/, "");
+			console.log("hash -- toId = " + toId);
+		} else {
+			toId = toUrl.pathname.substring(1);
+			console.log("pathname -- toId = " + toId);
+		}
+	} else {
+		toId = toPage.attr('id').replace(/^.*?\\#/, "");
+		console.log("attr -- toId = " + toId);
 	}
 	
-	var fromPage = undefined;
-	if (ui && ui.prevPage && ui.prevPage.attr('id')) {
-		fromPage = ui.prevPage;
-	} else {
-		fromPage = $.mobile.activePage;
-	}
-	var fromId = undefined;
-	if (fromPage && fromPage.attr('id')) {
-		fromId = fromPage.attr('id');
+	console.log(fromId + " -> " + toId + " (toUrl = " + toUrl + ")");
+
+	if (fromPage === undefined || fromId === undefined) {
+		console.log("? -> " + toId + ": no previous page; skipping");
+		return;
 	}
 
-	if (false) {
-		console.log("===============================================================");
-		console.log("eventType = " + eventType);
-		console.log("matchObj  = " + matchObj);
-		console.log("ui        = " + ui);
-		console.log("page      = " + toPage);
-		console.log("evt       = " + evt);
-	}
-
-	if (eventType == "pagebeforechange") {
-		console.log(eventType + ": " + fromId + " -> " + toId);
-
-		if (fromPage === undefined || fromId === undefined) {
-			console.log(eventType + ": ? -> " + toId + ": no previous page; skipping");
-			return;
-		}
-
-		if (fromId != toId) {
-			console.log("tabState = " + JSON.stringify(tabState));
-			if (toId.startsWith("outages")) {
-				if (fromId.startsWith("outages")) {
-					// changing outage tab state
-					console.log("saving state for outages");
-					tabState.outages = { pageId: toId, url: matchObj[0] };
+	if (fromId != toId) {
+		console.log("fromId = " + fromId + ", toId = " + toId + ", tabState = " + JSON.stringify(tabState));
+		if (toId.startsWith("outages")) {
+			console.log("toId starts with outages");
+			if (fromId.startsWith("outages")) {
+				// changing outage tab state
+				if (typeof toPage === 'string') {
+					tabState.outages = { pageId: toId, url: toPage };
 				} else {
-					// going back to the outage tab from elsewhere, restore state
-					console.log("pageId = " + tabState.outages.pageId + ", toId = " + toId);
-					if (tabState.outages.pageId != toId) {
-						evt.preventDefault();
-						// evt.stopPropagation();
-						$.mobile.changePage(tabState.outages.url);
-					} else {
-						return;
-					}
+					tabState.outages = { pageId: toId, url: '#' + toId };
 				}
-			}
-			if (toId.startsWith("nodes")) {
-				if (fromId.startsWith("nodes")) {
-					// changing nodes tab state
-					console.log("saving state for nodes");
-					tabState.nodes = { pageId: toId, url: matchObj[0] };
-				} else {
-					// going back to the nodes tab from elsewhere, restore state
-					console.log("pageId = " + tabState.nodes.pageId + ", toId = " + toId);
-					if (tabState.nodes.pageId != toId) {
-						evt.preventDefault();
-						// evt.stopPropagation();
-						$.mobile.changePage(tabState.nodes.url);
-					} else {
-						return;
-					}
+				console.log("saving state for outages: " + JSON.stringify(tabState.outages));
+				
+				if (toId == "outages-node-detail") {
+					e.preventDefault();
+					initializeNodeDetails(tabState.outages, e, data, toUrl);
+					return;
 				}
-			}
-			if (toId.startsWith("alarms")) {
-				if (fromId.startsWith("alarms")) {
-					// changing nodes tab state
-					console.log("saving state for alarms");
-					tabState.alarms = { pageId: toId, url: matchObj[0] };
-				} else {
-					// going back to the alarms tab from elsewhere, restore state
-					console.log("pageId = " + tabState.alarms.pageId + ", toId = " + toId);
-					if (tabState.alarms.pageId != toId) {
-						evt.preventDefault();
-						// evt.stopPropagation();
-						$.mobile.changePage(tabState.alarms.url);
-					} else {
-						return;
-					}
-				}
-			}
-		}
-	}
-};
-
-var initializeNodeDetails = function( eventType, matchObj, ui, page, evt ) {
-	/*
-	console.log("eventType = " + eventType);
-	console.log("matchObj  = " + matchObj);
-	console.log("ui        = " + ui);
-	console.log("page      = " + page);
-	console.log("event     = " + evt);
-	*/
-
-	var currentPage = $.mobile.activePage;
-
-	if (eventType == "pagebeforeshow") {
-		var source = matchObj[1];
-		var params = router.getParams(matchObj[2]);
-		var nodeId = params.nodeId;
-
-		var $footer = $(page).find(":jqmData(role=footer)");
-		$footer.find('a').each(function(index) {
-			var $href = $(this).attr('href');
-			if ($href == '#' + source) {
-				$(this).addClass('ui-btn-active');
-				$(this).addClass('ui-state-persist');
 			} else {
-				$(this).removeClass('ui-btn-active');
+				// going back to the outage tab from elsewhere, restore state
+				console.log("pageId = " + tabState.outages.pageId + ", toId = " + toId);
+				if (tabState.outages.pageId != toId) {
+					evt.preventDefault();
+					$.mobile.changePage(tabState.outages.url);
+				} else {
+					return;
+				}
 			}
-		});
-
-		var $nodeTitle = $(page).find(":jqmData(role=header)").find('h1');
-		var $nodeContent = $(page).find(":jqmData(role=content)");
-		$nodeTitle.html("Node #" + nodeId);
-		var template = nodes.getTemplate(nodeId);
-		$nodeContent.html(template);
-		nodes.updateNode(nodeId, page, true);
+		}
+		if (toId.startsWith("nodes")) {
+			if (fromId.startsWith("nodes")) {
+				// changing nodes tab state
+				console.log("saving state for nodes");
+				tabState.nodes = { pageId: toId, url: matchObj[0] };
+			} else {
+				// going back to the nodes tab from elsewhere, restore state
+				console.log("pageId = " + tabState.nodes.pageId + ", toId = " + toId);
+				if (tabState.nodes.pageId != toId) {
+					evt.preventDefault();
+					$.mobile.changePage(tabState.nodes.url);
+				} else {
+					return;
+				}
+			}
+		}
+		if (toId.startsWith("alarms")) {
+			if (fromId.startsWith("alarms")) {
+				// changing nodes tab state
+				console.log("saving state for alarms");
+				tabState.alarms = { pageId: toId, url: matchObj[0] };
+			} else {
+				// going back to the alarms tab from elsewhere, restore state
+				console.log("pageId = " + tabState.alarms.pageId + ", toId = " + toId);
+				if (tabState.alarms.pageId != toId) {
+					evt.preventDefault();
+					// evt.stopPropagation();
+					$.mobile.changePage(tabState.alarms.url);
+				} else {
+					return;
+				}
+			}
+		}
 	}
-};
+});
+
+// var router = new $.mobile.Router([
+//	{ "#(outages)-node-detail[?](.*)": { handler: initializeNodeDetails,  events: "bs" /* bs,s,h */ } },
+//	{ "#(nodes)-node-detail[?](.*)":   { handler: initializeNodeDetails,  events: "bs" /* bs,s,h */ } },
+//	{ "#(alarms)-detail[?](.*)":       { handler: initializeAlarmDetails, events: "bs" /* bs,s,h */ } },
+//	{ "^\\#([^?]*)([?].*?)?$":         { handler: defaultHandler,         events: "bC" /* bC,bl,l,bc,c,bs,s,bh,h,i,rm */ } }
+//]);
 
 var initializeAlarmDetails = function( eventType, matchObj, ui, page, evt ) {
 	
@@ -179,13 +181,6 @@ var refresh = function( cache ) {
 		}
 	}, cache);
 };
-
-var router = new $.mobile.Router([
-	{ "#(outages)-node-detail[?](.*)": { handler: initializeNodeDetails, events: "bs,s,h"    } },
-	{ "#(nodes)-node-detail[?](.*)":   { handler: initializeNodeDetails, events: "bs,s,h"    } },
-	{ "#(alarms)-detail[?](.*)":       { handler: initializeAlarmDetails, events: "bs,s,h"   } },
-	{ "^\\#([^?]*)([?].*?)?$":         { handler: defaultHandler,        events: "bC,bl,l,bc,c,bs,s,bh,h,i,rm" } }
-]);
 
 $( document ).ready(function() {
 	refresh(true);
